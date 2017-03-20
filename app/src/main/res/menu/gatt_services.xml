@@ -16,7 +16,6 @@
 <menu xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto">
     <item android:id="@+id/menu_refresh"
-        android:title="Connection"
           android:checkable="false"
           android:orderInCategory="1"
           app:showAsAction="ifRoom"/>
