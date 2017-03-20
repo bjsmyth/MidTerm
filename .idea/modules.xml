@@ -3,7 +3,10 @@
   <component name="ProjectModuleManager">
     <modules>
       <module fileurl="file://$PROJECT_DIR$/MidtermProject.iml" filepath="$PROJECT_DIR$/MidtermProject.iml" />
+      <module fileurl="file://$PROJECT_DIR$/MidtermProject.iml" filepath="$PROJECT_DIR$/MidtermProject.iml" />
       <module fileurl="file://$PROJECT_DIR$/app/app.iml" filepath="$PROJECT_DIR$/app/app.iml" />
+      <module fileurl="file://$PROJECT_DIR$/app/app.iml" filepath="$PROJECT_DIR$/app/app.iml" />
+      <module fileurl="file://$PROJECT_DIR$/bugstick/bugstick.iml" filepath="$PROJECT_DIR$/bugstick/bugstick.iml" />
       <module fileurl="file://$PROJECT_DIR$/bugstick/bugstick.iml" filepath="$PROJECT_DIR$/bugstick/bugstick.iml" />
     </modules>
   </component>

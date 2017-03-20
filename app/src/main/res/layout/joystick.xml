@@ -16,13 +16,11 @@
         app:force_square="true"
         app:motion_constraint="None"
         android:layout_alignParentBottom="true"
-        android:layout_centerHorizontal="true"
-        >
+        android:layout_centerHorizontal="true">
 
         <Button
             android:layout_width="100dp"
             android:layout_height="100dp"
             android:background="@drawable/bg_stick" />
-
     </com.jmedeisis.bugstick.Joystick>
 </RelativeLayout>
