@@ -34,8 +34,8 @@
         android:layout_centerHorizontal="true">
 
         <Button
-            android:layout_width="100dp"
-            android:layout_height="100dp"
+            android:layout_width="144dp"
+            android:layout_height="144dp"
             android:background="@drawable/bg_stick" />
     </com.jmedeisis.bugstick.Joystick>
 </RelativeLayout>
