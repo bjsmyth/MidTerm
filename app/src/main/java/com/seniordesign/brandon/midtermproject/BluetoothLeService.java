@@ -305,6 +305,15 @@ public class BluetoothLeService extends Service {
         //}
     }
 
+    public void writeCharacteristic(BluetoothGattCharacteristic characteristic) {
+        if(mBluetoothAdapter == null || mBluetoothGatt == null) {
+            Log.v(TAG, "BluetoothAdapter not initialized");
+            return;
+        }
+
+        mBluetoothGatt.writeCharacteristic(characteristic);
+    }
+
     /**
      * Retrieves a list of supported GATT services on the connected device. This should be
      * invoked only after {@code BluetoothGatt#discoverServices()} completes successfully.

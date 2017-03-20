@@ -26,6 +26,7 @@
             </intent-filter>
         </activity>
         <activity android:name=".DeviceControlActivity"/>
+        <activity android:name=".JoystickControl"/>
         <service android:name=".BluetoothLeService" android:enabled="true"/>
     </application>
 

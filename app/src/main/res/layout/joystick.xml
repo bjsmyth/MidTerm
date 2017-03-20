@@ -16,12 +16,6 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"/>
 
-    <Button
-        android:id="@+id/enable_disable_control"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_above="@+id/joystick"/>
-
     <com.jmedeisis.bugstick.Joystick
         android:id="@+id/joystick"
         android:layout_width="match_parent"
