@@ -3,7 +3,6 @@
     xmlns:tools="http://schemas.android.com/tools"
     tools:context="com.seniordesign.brandon.midtermproject.MainActivity">
     <item android:id="@+id/menu_refresh"
-        android:title="Scanner"
         android:checkable="false"
         android:orderInCategory="1"
         app:showAsAction="ifRoom"/>
