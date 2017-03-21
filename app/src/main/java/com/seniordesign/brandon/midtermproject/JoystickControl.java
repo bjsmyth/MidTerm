@@ -1,5 +1,6 @@
 package com.seniordesign.brandon.midtermproject;
 
+import android.bluetooth.BluetoothGatt;
 import android.bluetooth.BluetoothGattCharacteristic;
 import android.bluetooth.BluetoothGattService;
 import android.content.BroadcastReceiver;
@@ -24,6 +25,7 @@ import com.jmedeisis.bugstick.JoystickListener;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.UUID;
 
 public class JoystickControl extends AppCompatActivity {
     private final static String TAG = JoystickControl.class.getSimpleName();
@@ -32,19 +34,23 @@ public class JoystickControl extends AppCompatActivity {
     public static final String EXTRAS_DEVICE_ADDRESS = "DEVICE_ADDRESS";
 
     private TextView mConnectionState;
-    private TextView mDataField;
     private String mDeviceName;
     private String mDeviceAddress;
-    private ExpandableListView mGattServicesList;
     private BluetoothLeService mBluetoothLeService;
-    private ArrayList<ArrayList<BluetoothGattCharacteristic>> mGattCharacteristics =
-            new ArrayList<>();
     private boolean mConnected = false;
-    private BluetoothGattCharacteristic mNotifyCharacteristic;
     private BluetoothGattService mJoystickService;
 
-    private final String LIST_NAME = "NAME";
-    private final String LIST_UUID = "UUID";
+    private final String CONTROL_SERVICE_UUID = ;
+    private final String SERVO_CHARACTERISTIC_UUID = ;
+    private final String MOTOR_CHARACTERISTIC_UUID = ;
+    private final String DIRECTION_CHARACTERISTIC_UUID = ;
+
+    private int sendOffset = 0;
+    private int sendAngle = 0;
+    private BluetoothGattCharacteristic servoCharacteristic;
+    private BluetoothGattCharacteristic motorCharacteristic;
+    private BluetoothGattCharacteristic directionCharacteristic;
+    private boolean controlWrite = false;
 
     // Code to manage Service lifecycle.
     private final ServiceConnection mServiceConnection = new ServiceConnection() {
@@ -80,13 +86,28 @@ public class JoystickControl extends AppCompatActivity {
                 mConnected = true;
                 updateConnectionState(R.string.connected);
                 invalidateOptionsMenu();
-            } else if (BluetoothLeService.ACTION_GATT_DISCONNECTED.equals(action)) {
+
+                mJoystickService = mBluetoothLeService.getSingleGattService(UUID.fromString(CONTROL_SERVICE_UUID));
+
+                servoCharacteristic = mJoystickService.getCharacteristic(UUID.fromString(SERVO_CHARACTERISTIC_UUID));
+                motorCharacteristic = mJoystickService.getCharacteristic(UUID.fromString(MOTOR_CHARACTERISTIC_UUID));
+                directionCharacteristic = mJoystickService.getCharacteristic(UUID.fromString(DIRECTION_CHARACTERISTIC_UUID));
+
+                final int servoProp = servoCharacteristic.getProperties();
+                final int motorProp = motorCharacteristic.getProperties();
+                final int directionProp = directionCharacteristic.getProperties();
+
+                controlWrite = ((servoProp & BluetoothGattCharacteristic.PROPERTY_WRITE) > 0)  //All characteristics MUST be writable
+                        && ((motorProp & BluetoothGattCharacteristic.PROPERTY_WRITE) > 0)
+                        && ((directionProp & BluetoothGattCharacteristic.PROPERTY_WRITE) > 0);
+            }
+            else if (BluetoothLeService.ACTION_GATT_DISCONNECTED.equals(action)) {
                 mConnected = false;
                 updateConnectionState(R.string.disconnected);
                 invalidateOptionsMenu();
-            } else if (BluetoothLeService.ACTION_GATT_SERVICES_DISCOVERED.equals(action)) {
-                // Show all the supported services and characteristics on the user interface.
-                displayGattServices(mBluetoothLeService.getSupportedGattServices());
+            }
+            else if (BluetoothLeService.ACTION_GATT_SERVICES_DISCOVERED.equals(action)) {
+
             }
         }
     };
@@ -128,10 +149,32 @@ public class JoystickControl extends AppCompatActivity {
             public void onDrag(float degrees, float offset) {
 
                 float temp = offset * 255f;
-                int offsetInt = (int)temp;
+                sendOffset = (int)temp;
+
+                sendAngle = (int)degrees;
+
+                int direction;
+                if(sendAngle < 0)
+                {
+                    sendAngle = -sendAngle;
+                    direction = 0;
+                }
+                else {
+                    direction = 1;
+                }
 
                 angleView.setText(String.format(angleValueString, degrees));
-                offsetView.setText("Offset: " + offsetInt);
+                offsetView.setText("Offset: " + sendOffset);
+
+                if(mConnected && controlWrite) {
+                    servoCharacteristic.setValue(sendAngle, BluetoothGattCharacteristic.FORMAT_UINT8, 0);
+                    motorCharacteristic.setValue(sendOffset, BluetoothGattCharacteristic.FORMAT_UINT8, 0);
+                    directionCharacteristic.setValue(direction, BluetoothGattCharacteristic.FORMAT_UINT8, 0);
+
+                    mBluetoothLeService.writeCharacteristic(servoCharacteristic);
+                    mBluetoothLeService.writeCharacteristic(motorCharacteristic);
+                    mBluetoothLeService.writeCharacteristic(directionCharacteristic);
+                }
             }
 
             @Override
@@ -201,50 +244,6 @@ public class JoystickControl extends AppCompatActivity {
                 mConnectionState.setText(resourceId);
             }
         });
-    }
-
-    // Demonstrates how to iterate through the supported GATT Services/Characteristics.
-    // In this sample, we populate the data structure that is bound to the ExpandableListView
-    // on the UI.
-    private void displayGattServices(List<BluetoothGattService> gattServices) {
-        if (gattServices == null) return;
-        String uuid = null;
-        String unknownServiceString = getResources().getString(R.string.unknown_service);
-        String unknownCharaString = getResources().getString(R.string.unknown_characteristic);
-        ArrayList<HashMap<String, String>> gattServiceData = new ArrayList<>();
-        ArrayList<ArrayList<HashMap<String, String>>> gattCharacteristicData
-                = new ArrayList<>();
-        mGattCharacteristics = new ArrayList<>();
-
-        // Loops through available GATT Services.
-        for (BluetoothGattService gattService : gattServices) {
-            HashMap<String, String> currentServiceData = new HashMap<>();
-            uuid = gattService.getUuid().toString();
-            currentServiceData.put(
-                    LIST_NAME, SampleGattAttributes.lookup(uuid, unknownServiceString));
-            currentServiceData.put(LIST_UUID, uuid);
-            gattServiceData.add(currentServiceData);
-
-            ArrayList<HashMap<String, String>> gattCharacteristicGroupData =
-                    new ArrayList<>();
-            List<BluetoothGattCharacteristic> gattCharacteristics =
-                    gattService.getCharacteristics();
-            ArrayList<BluetoothGattCharacteristic> charas =
-                    new ArrayList<>();
-
-            // Loops through available Characteristics.
-            for (BluetoothGattCharacteristic gattCharacteristic : gattCharacteristics) {
-                charas.add(gattCharacteristic);
-                HashMap<String, String> currentCharaData = new HashMap<>();
-                uuid = gattCharacteristic.getUuid().toString();
-                currentCharaData.put(
-                        LIST_NAME, SampleGattAttributes.lookup(uuid, unknownCharaString));
-                currentCharaData.put(LIST_UUID, uuid);
-                gattCharacteristicGroupData.add(currentCharaData);
-            }
-            mGattCharacteristics.add(charas);
-            gattCharacteristicData.add(gattCharacteristicGroupData);
-        }
     }
 
     private static IntentFilter makeGattUpdateIntentFilter() {

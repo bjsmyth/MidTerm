@@ -311,6 +311,8 @@ public class BluetoothLeService extends Service {
             return;
         }
 
+
+
         mBluetoothGatt.writeCharacteristic(characteristic);
     }
 
@@ -324,5 +326,11 @@ public class BluetoothLeService extends Service {
         if (mBluetoothGatt == null) return null;
 
         return mBluetoothGatt.getServices();
+    }
+
+    public BluetoothGattService getSingleGattService(UUID uuid) {
+        if(mBluetoothGatt == null) return null;
+
+        return mBluetoothGatt.getService(uuid);
     }
 }

@@ -56,6 +56,8 @@ public class DeviceControlActivity extends AppCompatActivity {
     private TextView mDataField;
     private String mDeviceName;
     private String mDeviceAddress;
+    private String keepDeviceName;
+    private String keepDeviceAddress;
     private ExpandableListView mGattServicesList;
     private BluetoothLeService mBluetoothLeService;
     private ArrayList<ArrayList<BluetoothGattCharacteristic>> mGattCharacteristics =
@@ -162,6 +164,9 @@ public class DeviceControlActivity extends AppCompatActivity {
         mDeviceName = intent.getStringExtra(EXTRAS_DEVICE_NAME);
         mDeviceAddress = intent.getStringExtra(EXTRAS_DEVICE_ADDRESS);
 
+        keepDeviceName = mDeviceName;
+        keepDeviceAddress = mDeviceAddress;
+
         // Sets up UI references.
         final Button joystickButton = (Button) findViewById(R.id.joystick_button);
         ((TextView) findViewById(R.id.device_address)).setText(mDeviceAddress);
@@ -179,8 +184,8 @@ public class DeviceControlActivity extends AppCompatActivity {
             @Override
             public void onClick(View v) {
                 Intent toJoystick = new Intent(DeviceControlActivity.this, JoystickControl.class);
-                intent.putExtra(DeviceControlActivity.EXTRAS_DEVICE_NAME, mDeviceName);
-                intent.putExtra(DeviceControlActivity.EXTRAS_DEVICE_ADDRESS, mDeviceAddress);
+                intent.putExtra(DeviceControlActivity.EXTRAS_DEVICE_NAME, keepDeviceName);
+                intent.putExtra(DeviceControlActivity.EXTRAS_DEVICE_ADDRESS, keepDeviceAddress);
 
                 unbindService(mServiceConnection);
                 mBluetoothLeService = null;
@@ -267,13 +272,13 @@ public class DeviceControlActivity extends AppCompatActivity {
     // on the UI.
     private void displayGattServices(List<BluetoothGattService> gattServices) {
         if (gattServices == null) return;
-        String uuid = null;
+        String uuid;
         String unknownServiceString = getResources().getString(R.string.unknown_service);
         String unknownCharaString = getResources().getString(R.string.unknown_characteristic);
         ArrayList<HashMap<String, String>> gattServiceData = new ArrayList<>();
         ArrayList<ArrayList<HashMap<String, String>>> gattCharacteristicData
                 = new ArrayList<>();
-        mGattCharacteristics = new ArrayList<ArrayList<BluetoothGattCharacteristic>>();
+        mGattCharacteristics = new ArrayList<>();
 
         // Loops through available GATT Services.
         for (BluetoothGattService gattService : gattServices) {
