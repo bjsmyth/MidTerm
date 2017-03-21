@@ -9,6 +9,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.ServiceConnection;
+import android.os.AsyncTask;
 import android.os.IBinder;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
@@ -40,17 +41,20 @@ public class JoystickControl extends AppCompatActivity {
     private boolean mConnected = false;
     private BluetoothGattService mJoystickService;
 
-    private final String CONTROL_SERVICE_UUID = ;
-    private final String SERVO_CHARACTERISTIC_UUID = ;
-    private final String MOTOR_CHARACTERISTIC_UUID = ;
-    private final String DIRECTION_CHARACTERISTIC_UUID = ;
+    private final String CONTROL_SERVICE_UUID = "19B10000-E8F2-537E-4F6C-D104768A1214".toLowerCase();
+    private final String SERVO_CHARACTERISTIC_UUID = "19B10001-E8F2-537E-4F6C-D104768A1214".toLowerCase();
+    private final String MOTOR_CHARACTERISTIC_UUID = "19B10001-E8F2-537E-4F6C-D104768A1215".toLowerCase();
+    private final String DIRECTION_CHARACTERISTIC_UUID = "19B10001-E8F2-537E-4F6C-D104768A1216".toLowerCase();
 
     private int sendOffset = 0;
     private int sendAngle = 0;
+    private int direction = 0;
     private BluetoothGattCharacteristic servoCharacteristic;
     private BluetoothGattCharacteristic motorCharacteristic;
     private BluetoothGattCharacteristic directionCharacteristic;
     private boolean controlWrite = false;
+    private int writeIterator = 0;
+    private int[] changedValues = {0, 0, 0};
 
     // Code to manage Service lifecycle.
     private final ServiceConnection mServiceConnection = new ServiceConnection() {
@@ -87,12 +91,19 @@ public class JoystickControl extends AppCompatActivity {
                 updateConnectionState(R.string.connected);
                 invalidateOptionsMenu();
 
-                mJoystickService = mBluetoothLeService.getSingleGattService(UUID.fromString(CONTROL_SERVICE_UUID));
 
-                servoCharacteristic = mJoystickService.getCharacteristic(UUID.fromString(SERVO_CHARACTERISTIC_UUID));
-                motorCharacteristic = mJoystickService.getCharacteristic(UUID.fromString(MOTOR_CHARACTERISTIC_UUID));
-                directionCharacteristic = mJoystickService.getCharacteristic(UUID.fromString(DIRECTION_CHARACTERISTIC_UUID));
+            } else if (BluetoothLeService.ACTION_GATT_DISCONNECTED.equals(action)) {
+                mConnected = false;
+                updateConnectionState(R.string.disconnected);
+                invalidateOptionsMenu();
+            } else if (BluetoothLeService.ACTION_GATT_SERVICES_DISCOVERED.equals(action)) {
+                mJoystickService = mBluetoothLeService.getSupportedGattServices().get(2);
 
+                Log.e("Service", mJoystickService.getUuid().toString());
+
+                servoCharacteristic = mJoystickService.getCharacteristics().get(0);
+                motorCharacteristic = mJoystickService.getCharacteristics().get(1);
+                directionCharacteristic = mJoystickService.getCharacteristics().get(2);
                 final int servoProp = servoCharacteristic.getProperties();
                 final int motorProp = motorCharacteristic.getProperties();
                 final int directionProp = directionCharacteristic.getProperties();
@@ -100,14 +111,6 @@ public class JoystickControl extends AppCompatActivity {
                 controlWrite = ((servoProp & BluetoothGattCharacteristic.PROPERTY_WRITE) > 0)  //All characteristics MUST be writable
                         && ((motorProp & BluetoothGattCharacteristic.PROPERTY_WRITE) > 0)
                         && ((directionProp & BluetoothGattCharacteristic.PROPERTY_WRITE) > 0);
-            }
-            else if (BluetoothLeService.ACTION_GATT_DISCONNECTED.equals(action)) {
-                mConnected = false;
-                updateConnectionState(R.string.disconnected);
-                invalidateOptionsMenu();
-            }
-            else if (BluetoothLeService.ACTION_GATT_SERVICES_DISCOVERED.equals(action)) {
-
             }
         }
     };
@@ -117,11 +120,14 @@ public class JoystickControl extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.joystick);
 
-        final Intent intent = getIntent();
+        Bundle b = getIntent().getExtras();
 
+        //mDeviceName = b.getString("deviceName");
+        //mDeviceAddress = b.getString("deviceAddress");
 
-        mDeviceName = intent.getStringExtra(EXTRAS_DEVICE_NAME);
-        mDeviceAddress = intent.getStringExtra(EXTRAS_DEVICE_ADDRESS);
+        mDeviceName = "LineFoll";
+        mDeviceAddress = "98:4F:EE:0F:96:0F";
+
         Log.e("NameAddress", mDeviceName + mDeviceAddress);
 
         getSupportActionBar().setTitle("Manual Control");
@@ -134,7 +140,7 @@ public class JoystickControl extends AppCompatActivity {
         final TextView offsetView = (TextView) findViewById(R.id.tv_offset);
 
         final String angleNoneString = "Angle: none";
-        final String angleValueString = "Angle: %1$.2f";
+        final String angleValueString = "Angle: %d";
         final String offsetNoneString = "Offset: none";
 
         Joystick joystick = (Joystick) findViewById(R.id.joystick);
@@ -149,31 +155,54 @@ public class JoystickControl extends AppCompatActivity {
             public void onDrag(float degrees, float offset) {
 
                 float temp = offset * 255f;
-                sendOffset = (int)temp;
+                sendOffset = (int) temp;
 
-                sendAngle = (int)degrees;
+                sendAngle = (int) degrees;
 
-                int direction;
-                if(sendAngle < 0)
-                {
+                if (sendAngle < 0) {
                     sendAngle = -sendAngle;
                     direction = 0;
-                }
-                else {
+                } else {
                     direction = 1;
                 }
 
-                angleView.setText(String.format(angleValueString, degrees));
+                angleView.setText(String.format(angleValueString, sendAngle));
                 offsetView.setText("Offset: " + sendOffset);
-
-                if(mConnected && controlWrite) {
-                    servoCharacteristic.setValue(sendAngle, BluetoothGattCharacteristic.FORMAT_UINT8, 0);
-                    motorCharacteristic.setValue(sendOffset, BluetoothGattCharacteristic.FORMAT_UINT8, 0);
-                    directionCharacteristic.setValue(direction, BluetoothGattCharacteristic.FORMAT_UINT8, 0);
-
-                    mBluetoothLeService.writeCharacteristic(servoCharacteristic);
-                    mBluetoothLeService.writeCharacteristic(motorCharacteristic);
-                    mBluetoothLeService.writeCharacteristic(directionCharacteristic);
+                long sleep = 100;
+                if (mConnected && controlWrite) {
+                    switch (writeIterator) {
+                        case 0:
+                            if (sendAngle != changedValues[0]) {
+                                servoCharacteristic.setValue(sendAngle, BluetoothGattCharacteristic.FORMAT_UINT8, 0);
+                                mBluetoothLeService.writeCharacteristic(servoCharacteristic);
+                                try {
+                                    Thread.sleep(sleep);
+                                } catch (InterruptedException e) {
+                                    e.printStackTrace();
+                                }
+                            }
+                            break;
+                        case 1:
+                            motorCharacteristic.setValue(sendOffset, BluetoothGattCharacteristic.FORMAT_UINT8, 0);
+                            mBluetoothLeService.writeCharacteristic(motorCharacteristic);
+                            try {
+                                Thread.sleep(sleep);
+                            } catch (InterruptedException e) {
+                                e.printStackTrace();
+                            }
+                            break;
+                        case 2:
+                            directionCharacteristic.setValue(direction, BluetoothGattCharacteristic.FORMAT_UINT8, 0);
+                            mBluetoothLeService.writeCharacteristic(directionCharacteristic);
+                            try {
+                                Thread.sleep(sleep);
+                            } catch (InterruptedException e) {
+                                e.printStackTrace();
+                            }
+                            break;
+                    }
+                    writeIterator++;
+                    writeIterator %= 3;
                 }
             }
 
@@ -223,7 +252,7 @@ public class JoystickControl extends AppCompatActivity {
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
-        switch(item.getItemId()) {
+        switch (item.getItemId()) {
             case R.id.menu_connect:
                 mBluetoothLeService.connect(mDeviceAddress);
                 return true;
@@ -241,7 +270,7 @@ public class JoystickControl extends AppCompatActivity {
         runOnUiThread(new Runnable() {
             @Override
             public void run() {
-                mConnectionState.setText(resourceId);
+                //mConnectionState.setText(resourceId);
             }
         });
     }

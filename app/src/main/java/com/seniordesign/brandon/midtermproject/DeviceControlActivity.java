@@ -184,11 +184,18 @@ public class DeviceControlActivity extends AppCompatActivity {
             @Override
             public void onClick(View v) {
                 Intent toJoystick = new Intent(DeviceControlActivity.this, JoystickControl.class);
-                intent.putExtra(DeviceControlActivity.EXTRAS_DEVICE_NAME, keepDeviceName);
-                intent.putExtra(DeviceControlActivity.EXTRAS_DEVICE_ADDRESS, keepDeviceAddress);
+                Log.e("devName", keepDeviceName);
+                Log.e("mac", keepDeviceAddress);
+                mBluetoothLeService.disconnect();
 
-                unbindService(mServiceConnection);
-                mBluetoothLeService = null;
+                Bundle bundle = new Bundle();
+                bundle.putString("deviceName", keepDeviceName);
+                bundle.putString("deviceAddress", keepDeviceAddress);
+
+                intent.putExtras(bundle);
+
+                //unbindService(mServiceConnection);
+                //mBluetoothLeService = null;
 
                 startActivity(toJoystick);
             }
