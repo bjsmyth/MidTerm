@@ -46,15 +46,9 @@ public class JoystickControl extends AppCompatActivity {
     private final String MOTOR_CHARACTERISTIC_UUID = "19B10001-E8F2-537E-4F6C-D104768A1215".toLowerCase();
     private final String DIRECTION_CHARACTERISTIC_UUID = "19B10001-E8F2-537E-4F6C-D104768A1216".toLowerCase();
 
-    private int sendOffset = 0;
-    private int sendAngle = 0;
-    private int direction = 0;
-    private BluetoothGattCharacteristic servoCharacteristic;
-    private BluetoothGattCharacteristic motorCharacteristic;
-    private BluetoothGattCharacteristic directionCharacteristic;
-    private boolean controlWrite = false;
-    private int writeIterator = 0;
-    private int[] changedValues = {0, 0, 0};
+    private BluetoothGattCharacteristic controlCharacteristic;
+    private byte[] charArray = {0x00, 0x00, 0x01};
+    private boolean controlWrite;
 
     // Code to manage Service lifecycle.
     private final ServiceConnection mServiceConnection = new ServiceConnection() {
@@ -101,16 +95,10 @@ public class JoystickControl extends AppCompatActivity {
 
                 Log.e("Service", mJoystickService.getUuid().toString());
 
-                servoCharacteristic = mJoystickService.getCharacteristics().get(0);
-                motorCharacteristic = mJoystickService.getCharacteristics().get(1);
-                directionCharacteristic = mJoystickService.getCharacteristics().get(2);
-                final int servoProp = servoCharacteristic.getProperties();
-                final int motorProp = motorCharacteristic.getProperties();
-                final int directionProp = directionCharacteristic.getProperties();
+                controlCharacteristic = mJoystickService.getCharacteristics().get(0);
+                final int controlProp = controlCharacteristic.getProperties();
 
-                controlWrite = ((servoProp & BluetoothGattCharacteristic.PROPERTY_WRITE) > 0)  //All characteristics MUST be writable
-                        && ((motorProp & BluetoothGattCharacteristic.PROPERTY_WRITE) > 0)
-                        && ((directionProp & BluetoothGattCharacteristic.PROPERTY_WRITE) > 0);
+                controlWrite = (controlProp & BluetoothGattCharacteristic.PROPERTY_WRITE) > 0;
             }
         }
     };
@@ -154,55 +142,28 @@ public class JoystickControl extends AppCompatActivity {
             @Override
             public void onDrag(float degrees, float offset) {
 
-                float temp = offset * 255f;
-                sendOffset = (int) temp;
+                int speed = (int)(offset * 255f);
 
-                sendAngle = (int) degrees;
+                int sendDegrees = (int) degrees;
 
-                if (sendAngle < 0) {
-                    sendAngle = -sendAngle;
+                angleView.setText(String.format(angleValueString, sendDegrees));
+                offsetView.setText("Offset: " + speed);
+
+                byte direction;
+                if (sendDegrees < 0) {
+                    sendDegrees = -sendDegrees;
                     direction = 0;
                 } else {
                     direction = 1;
                 }
 
-                angleView.setText(String.format(angleValueString, sendAngle));
-                offsetView.setText("Offset: " + sendOffset);
-                long sleep = 100;
-                if (mConnected && controlWrite) {
-                    switch (writeIterator) {
-                        case 0:
-                            if (sendAngle != changedValues[0]) {
-                                servoCharacteristic.setValue(sendAngle, BluetoothGattCharacteristic.FORMAT_UINT8, 0);
-                                mBluetoothLeService.writeCharacteristic(servoCharacteristic);
-                                try {
-                                    Thread.sleep(sleep);
-                                } catch (InterruptedException e) {
-                                    e.printStackTrace();
-                                }
-                            }
-                            break;
-                        case 1:
-                            motorCharacteristic.setValue(sendOffset, BluetoothGattCharacteristic.FORMAT_UINT8, 0);
-                            mBluetoothLeService.writeCharacteristic(motorCharacteristic);
-                            try {
-                                Thread.sleep(sleep);
-                            } catch (InterruptedException e) {
-                                e.printStackTrace();
-                            }
-                            break;
-                        case 2:
-                            directionCharacteristic.setValue(direction, BluetoothGattCharacteristic.FORMAT_UINT8, 0);
-                            mBluetoothLeService.writeCharacteristic(directionCharacteristic);
-                            try {
-                                Thread.sleep(sleep);
-                            } catch (InterruptedException e) {
-                                e.printStackTrace();
-                            }
-                            break;
-                    }
-                    writeIterator++;
-                    writeIterator %= 3;
+                charArray[0] = (byte)sendDegrees;
+                charArray[1] = (byte)speed;
+                charArray[2] = direction;
+
+                if(mConnected && controlWrite) {
+                    controlCharacteristic.setValue(charArray);
+                    mBluetoothLeService.writeCharacteristic(controlCharacteristic);
                 }
             }
 
@@ -210,6 +171,12 @@ public class JoystickControl extends AppCompatActivity {
             public void onUp() {
                 angleView.setText(angleNoneString);
                 offsetView.setText(offsetNoneString);
+
+                charArray[1] = 0;
+                if(mConnected && controlWrite) {
+                    controlCharacteristic.setValue(charArray);
+                    mBluetoothLeService.writeCharacteristic(controlCharacteristic);
+                }
             }
         });
     }
