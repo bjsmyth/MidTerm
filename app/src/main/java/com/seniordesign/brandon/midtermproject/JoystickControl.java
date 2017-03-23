@@ -118,7 +118,7 @@ public class JoystickControl extends AppCompatActivity {
 
         Log.e("NameAddress", mDeviceName + mDeviceAddress);
 
-        getSupportActionBar().setTitle("Manual Control");
+        getSupportActionBar().setTitle(R.string.title_joystick);
         getSupportActionBar().setDisplayHomeAsUpEnabled(true);
 
         Intent gattServiceIntent = new Intent(this, BluetoothLeService.class);
@@ -130,6 +130,7 @@ public class JoystickControl extends AppCompatActivity {
         final String angleNoneString = "Angle: none";
         final String angleValueString = "Angle: %d";
         final String offsetNoneString = "Offset: none";
+        final String offsetValueString = "Offset: %d";
 
         Joystick joystick = (Joystick) findViewById(R.id.joystick);
 
@@ -147,7 +148,7 @@ public class JoystickControl extends AppCompatActivity {
                 int sendDegrees = (int) degrees;
 
                 angleView.setText(String.format(angleValueString, sendDegrees));
-                offsetView.setText("Offset: " + speed);
+                offsetView.setText(String.format(offsetValueString, speed));
 
                 byte direction;
                 if (sendDegrees < 0) {

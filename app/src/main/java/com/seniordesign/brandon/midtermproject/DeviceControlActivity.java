@@ -175,7 +175,7 @@ public class DeviceControlActivity extends AppCompatActivity {
         mConnectionState = (TextView) findViewById(R.id.connection_state);
         mDataField = (TextView) findViewById(R.id.data_value);
 
-        if(!mDeviceName.equals("LineFoll"))
+        if(!mDeviceAddress.equals("98:4F:EE:0F:96:0F"))
         {
             joystickButton.setVisibility(View.GONE);
         }
