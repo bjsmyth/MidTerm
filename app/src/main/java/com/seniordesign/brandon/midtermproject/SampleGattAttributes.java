@@ -23,13 +23,15 @@ import java.util.HashMap;
  */
 public class SampleGattAttributes {
     private static HashMap<String, String> attributes = new HashMap();
+
+    public static String FOLLOWER_SERVICE = "19b10000-e8f2-537e-4f6c-d104768a1214";
+
     public static String HEART_RATE_MEASUREMENT = "00002a37-0000-1000-8000-00805f9b34fb";
     public static String CLIENT_CHARACTERISTIC_CONFIG = "00002902-0000-1000-8000-00805f9b34fb";
     public static String EXAMPLE_POTENTIOMETER = "19b10001-e8f2-537e-4f6c-e104768a1215";
     public static String EXAMPLE_LIGHTSENSOR = "19b10001-e8f2-537e-4f6c-e104768a1216";
     public static String CONTROL_CHARACTERISTIC = "19b10001-e8f2-537e-4f6c-d104768a1215";
 
-    public static String FOLLOWER_SERVICE = "19b10000-e8f2-537e-4f6c-d104768a1214";
 
     static {
         // Sample Services.

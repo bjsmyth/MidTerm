@@ -194,9 +194,6 @@ public class DeviceControlActivity extends AppCompatActivity {
 
                 intent.putExtras(bundle);
 
-                //unbindService(mServiceConnection);
-                //mBluetoothLeService = null;
-
                 startActivity(toJoystick);
             }
         });

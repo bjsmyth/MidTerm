@@ -41,11 +41,6 @@ public class JoystickControl extends AppCompatActivity {
     private boolean mConnected = false;
     private BluetoothGattService mJoystickService;
 
-    private final String CONTROL_SERVICE_UUID = "19B10000-E8F2-537E-4F6C-D104768A1214".toLowerCase();
-    private final String SERVO_CHARACTERISTIC_UUID = "19B10001-E8F2-537E-4F6C-D104768A1214".toLowerCase();
-    private final String MOTOR_CHARACTERISTIC_UUID = "19B10001-E8F2-537E-4F6C-D104768A1215".toLowerCase();
-    private final String DIRECTION_CHARACTERISTIC_UUID = "19B10001-E8F2-537E-4F6C-D104768A1216".toLowerCase();
-
     private BluetoothGattCharacteristic controlCharacteristic;
     private byte[] charArray = {0x00, 0x00, 0x01};
     private boolean controlWrite;
