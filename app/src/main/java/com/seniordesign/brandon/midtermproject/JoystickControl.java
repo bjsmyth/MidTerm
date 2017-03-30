@@ -91,11 +91,11 @@ public class JoystickControl extends AppCompatActivity {
                 updateConnectionState(R.string.disconnected);
                 invalidateOptionsMenu();
             } else if (BluetoothLeService.ACTION_GATT_SERVICES_DISCOVERED.equals(action)) {
-                mJoystickService = mBluetoothLeService.getSupportedGattServices().get(2);
+                mJoystickService = mBluetoothLeService.getSingleGattService(UUID.fromString(SampleGattAttributes.FOLLOWER_SERVICE));
 
                 Log.e("Service", mJoystickService.getUuid().toString());
 
-                controlCharacteristic = mJoystickService.getCharacteristics().get(0);
+                controlCharacteristic = mJoystickService.getCharacteristic(UUID.fromString(SampleGattAttributes.CONTROL_CHARACTERISTIC));
                 final int controlProp = controlCharacteristic.getProperties();
 
                 controlWrite = (controlProp & BluetoothGattCharacteristic.PROPERTY_WRITE) > 0;
@@ -126,6 +126,7 @@ public class JoystickControl extends AppCompatActivity {
 
         final TextView angleView = (TextView) findViewById(R.id.tv_angle);
         final TextView offsetView = (TextView) findViewById(R.id.tv_offset);
+        final TextView sendView = (TextView) findViewById(R.id.send_value);
 
         final String angleNoneString = "Angle: none";
         final String angleValueString = "Angle: %d";
@@ -164,6 +165,14 @@ public class JoystickControl extends AppCompatActivity {
                 if(mConnected && controlWrite) {
                     controlCharacteristic.setValue(charArray);
                     mBluetoothLeService.writeCharacteristic(controlCharacteristic);
+
+                    final byte[] data = controlCharacteristic.getValue();
+
+                    final StringBuilder stringBuilder = new StringBuilder(data.length);
+                    for(byte byteChar : data)
+                        stringBuilder.append(String.format("%02X ", byteChar));
+
+                    sendView.setText("Sent bytes: " + stringBuilder.toString());
                 }
             }
 
@@ -176,6 +185,14 @@ public class JoystickControl extends AppCompatActivity {
                 if(mConnected && controlWrite) {
                     controlCharacteristic.setValue(charArray);
                     mBluetoothLeService.writeCharacteristic(controlCharacteristic);
+
+                    final byte[] data = controlCharacteristic.getValue();
+
+                    final StringBuilder stringBuilder = new StringBuilder(data.length);
+                    for(byte byteChar : data)
+                        stringBuilder.append(String.format("%02X ", byteChar));
+
+                    sendView.setText("Sent bytes: " + stringBuilder.toString());
                 }
             }
         });

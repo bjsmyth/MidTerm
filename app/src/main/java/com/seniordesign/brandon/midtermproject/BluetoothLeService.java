@@ -32,6 +32,8 @@ import android.os.Binder;
 import android.os.IBinder;
 import android.util.Log;
 
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 import java.util.List;
 import java.util.UUID;
 
@@ -66,6 +68,10 @@ public class BluetoothLeService extends Service {
 
     public final static UUID UUID_HEART_RATE_MEASUREMENT =
             UUID.fromString(SampleGattAttributes.HEART_RATE_MEASUREMENT);
+    public final static UUID UUID_POTENTIOMETER =
+            UUID.fromString(SampleGattAttributes.EXAMPLE_POTENTIOMETER);
+    public final static UUID UUID_LIGHT =
+            UUID.fromString(SampleGattAttributes.EXAMPLE_LIGHTSENSOR);
 
     // Implements callback methods for GATT events that the app cares about.  For example,
     // connection change and services discovered.
@@ -140,7 +146,36 @@ public class BluetoothLeService extends Service {
             final int heartRate = characteristic.getIntValue(format, 1);
             Log.d(TAG, String.format("Received heart rate: %d", heartRate));
             intent.putExtra(EXTRA_DATA, String.valueOf(heartRate));
-        } else {
+        }
+        else if(UUID_POTENTIOMETER.equals(characteristic.getUuid())) {
+            final byte[] data = characteristic.getValue();
+
+            ByteBuffer bb = ByteBuffer.wrap(data);
+            bb.order(ByteOrder.LITTLE_ENDIAN);
+
+            short temp = 0;
+            while(bb.hasRemaining()) {
+                temp = bb.getShort();
+            }
+
+            final short v = temp;
+            intent.putExtra(EXTRA_DATA, String.valueOf(v));
+        }
+        else if(UUID_LIGHT.equals(characteristic.getUuid())) {
+            final byte[] data = characteristic.getValue();
+
+            ByteBuffer bb = ByteBuffer.wrap(data);
+            bb.order(ByteOrder.LITTLE_ENDIAN);
+
+            short temp = 0;
+            while(bb.hasRemaining()) {
+                temp = bb.getShort();
+            }
+
+            final short v = temp;
+            intent.putExtra(EXTRA_DATA, String.valueOf(v));
+        }
+        else {
             // For all other profiles, writes the data formatted in HEX.
             final byte[] data = characteristic.getValue();
             if (data != null && data.length > 0) {
