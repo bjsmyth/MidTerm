@@ -220,7 +220,7 @@ public class MainActivity extends AppCompatActivity {
 
         public LeDeviceListAdapter(Context context, int tvResId, ArrayList<BluetoothDevice> items) {
             super(context, tvResId, items);
-            mLeDevices = new ArrayList<BluetoothDevice>();
+            mLeDevices = new ArrayList<>();
             mInflator = MainActivity.this.getLayoutInflater();
         }
 

@@ -157,8 +157,12 @@ public class BluetoothLeService extends Service {
                 temp = bb.getShort();
             }
 
+            final StringBuilder stringBuilder = new StringBuilder(data.length);
+            for(byte byteChar : data)
+                stringBuilder.append(String.format("%02X ", byteChar));
+
             final short v = temp;
-            intent.putExtra(EXTRA_DATA, String.valueOf(v));
+            intent.putExtra(EXTRA_DATA, String.valueOf(v) + "\n" + stringBuilder.toString());
         }
         else if(UUID_LIGHT.equals(characteristic.getUuid())) {
             final byte[] data = characteristic.getValue();
@@ -171,8 +175,12 @@ public class BluetoothLeService extends Service {
                 temp = bb.getShort();
             }
 
+            final StringBuilder stringBuilder = new StringBuilder(data.length);
+            for(byte byteChar : data)
+                stringBuilder.append(String.format("%02X ", byteChar));
+
             final short v = temp;
-            intent.putExtra(EXTRA_DATA, String.valueOf(v));
+            intent.putExtra(EXTRA_DATA, String.valueOf(v) + "\n" + stringBuilder.toString());
         }
         else {
             // For all other profiles, writes the data formatted in HEX.
