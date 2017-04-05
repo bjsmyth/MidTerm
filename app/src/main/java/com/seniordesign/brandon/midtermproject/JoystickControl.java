@@ -99,11 +99,6 @@ public class JoystickControl extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.joystick);
 
-        Bundle b = getIntent().getExtras();
-
-        //mDeviceName = b.getString("deviceName");
-        //mDeviceAddress = b.getString("deviceAddress");
-
         mDeviceName = "LineFoll";
         mDeviceAddress = "98:4F:EE:0F:96:0F";
 
